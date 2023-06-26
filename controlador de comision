@@ -126,7 +126,7 @@ public function obtenerCarnetTrabajadorActivo()
     public function index()
     {
         $user = Auth::user();
-        $usuarioLoggeado = users::where('carnet',$user->carnet)->get();
+        $usuarioLoggeado = User::where('carnet',$user->carnet)->get();
         dd($user);
     }
 
