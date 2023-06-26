@@ -1,0 +1,275 @@
+<?php
+
+namespace Modules\RecursosHumanos\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Contracts\Support\Renderable;
+use Modules\RecursosHumanos\Facades\Area;
+use Modules\RecursosHumanos\Facades\Comision;
+use Modules\RecursosHumanos\Facades\Personal;
+use Modules\RecursosHumanos\Facades\Seccion;
+use Modules\RecursosHumanos\Http\Requests\ComisionRequest;
+
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use App\Models\User;
+
+
+
+class ComisionController extends Controller
+{
+
+    public function __construct()
+    {
+        //$this->middleware(['permission:recursoshumanos.comision.index'])->only(['index', 'all', 'show']);
+        $this->middleware(['permission:recursoshumanos.comision.create'])->only(['create', 'store']);
+        $this->middleware(['permission:recursoshumanos.comision.edit'])->only(['edit', 'update']);
+        $this->middleware(['permission:recursoshumanos.comision.destroy'])->only(['destroy']);
+        $this->middleware(['permission:recursoshumanos.comision.updateEstado'])->only(['updateEstado']);
+    }
+////////METODO PARA FILTRAR LOS REGISTROS DEL USUARIO AUTENTICADO////////////////
+public function obtenerCarnetTrabajadorActivo()
+{
+    $user = Auth::user(); // Obtener el usuario autenticado actualmente
+  
+    if ($user) {
+        $carnet = $user->carnet; // Obtener el valor del carnet del usuario
+        
+        $rrhh_comision = DB::connection('sisinvconsolidado2023')
+            ->table('rrhh_comision')
+            ->select('ID',
+            'ESTADO',
+            'CARNET',
+            'NOMBRE_COMPLETO',
+            'FECHA_SOLICITUD',
+            'SECCION',
+            // 'ID_AREA',
+            // 'FECHA_INICIO_SOLICITUD',
+            // 'FECHA_FIN_SOLICITUD',
+            // 'OBSERVACION',
+            // 'FECHA_RETORNO',
+            // 'SALDO_FAVOR_VACACION',
+            // 'HORA_INICIO_SOLICITUD',
+            // 'HORA_FIN_SOLICITUD',
+            // 'TOTAL_DIAS',
+            // 'TOTAL_HORAS',
+            // 'DIAS_VACACION',
+            // 'HORAS_VACACION',
+            // 'CREATED_AT',
+            // 'UPDATED_AT',
+            // 'DELETED_AT',
+            'DELETED_ID')
+            ->where('CARNET', $carnet)
+            ->first();
+            
+            //dd($carnet);
+        return $rrhh_comision;
+    }
+ 
+    // Manejar el caso en el que no se encuentre un usuario autenticado
+    return null;
+}
+
+    // public function obtenerCarnetTrabajadorActivo()
+    // {
+    //     $user_id = Auth::id();
+    //     $usuario = DB::table('usuario')
+    //         ->select('id', 'name', 'username', 'carnet')
+    //         ->where('carnet', $CARNET)   //comparando carnet de usuario con CARNET de comision
+    //         ->first();
+    // }
+
+    /**
+     * Display a listing of the resource.
+     * @return Renderable
+     */
+///////////METODO PARA AUTORIZAR////////////////////////////////////////// 👍 👎
+    public function updateEstado( $id)
+    {
+        $decision = request('decision');
+    
+            if ($decision === '1') {
+                dd($decision);
+                Comision::update(['ESTADO' => '1'], $id);
+                return redirect()->route('recursoshumanos.comision.index')
+                    ->with('success', 'Boleta autorizada satisfactoriamente');
+            } elseif ($decision === '0') {
+                dd($decision);
+                Comision::update(['ESTADO' => '0'], $id);
+                return redirect()->route('recursoshumanos.comision.index')
+                    ->with('success', 'Boleta rechazada');
+            }
+            if ($decision === null) {
+                dd($decision);
+                Comision::update(['ESTADO' => 'null'], $id);
+                return redirect()->route('recursoshumanos.comision.index')
+                    ->with('success', 'Boleta autorizada satisfactoriamente');
+            }
+    }
+    
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+// public function index()
+// {
+//     $carnet = Auth::user()->carnet; // Obtener el carnet del usuario autenticado
+//      $rrhh_comision = DB::connection('sisinvconsolidado2023')
+//         ->table('rrhh_comision')
+//         ->select('ID', 'ESTADO', 'CARNET', 'NOMBRE_COMPLETO', 'FECHA_SOLICITUD', 'SECCION', 'ID_AREA', 'FECHA_INICIO_SOLICITUD', 'FECHA_FIN_SOLICITUD', 'OBSERVACION', 'FECHA_RETORNO', 'SALDO_FAVOR_VACACION', 'HORA_INICIO_SOLICITUD', 'HORA_FIN_SOLICITUD', 'TOTAL_DIAS', 'TOTAL_HORAS', 'DIAS_VACACION', 'HORAS_VACACION', 'CREATED_AT', 'UPDATED_AT', 'DELETED_AT', 'DELETED_ID')
+//         ->where('CARNET', $carnet)
+//         ->get();
+//      return view('recursoshumanos::comision.index', compact('rrhh_comision'));
+//     dd($rrhh_comision);
+// }
+
+
+    public function index()
+    {
+        $user = Auth::user();
+        $usuarioLoggeado = users::where('carnet',$user->carnet)->get();
+        dd($user);
+    }
+
+/////INICIO NORMAL
+// public function index()
+//     {
+//         //$user = Auth::user();
+//         //dd($user);
+//          return view('recursoshumanos::comision.index'); //, compact('user')
+//     }
+
+
+
+////////////1 PRUEBA//////////////
+    // public function all()
+    // {
+    //     $carnet = Auth::user()->carnet; // Obtener el carnet del usuario autenticado
+    //     $usuario = DB::table('users')
+    //         ->select('id', 'name', 'email', 'carnet')
+    //         ->where('carnet', strtoupper($carnet)) // Convertir el carnet a mayúsculas
+    //         ->first();
+    //     dd($carnet, $usuario);
+
+    //     return Comision::where('CARNET', strtoupper($carnet))->get(); // Filtrar por el carnet en mayúsculas
+    // }
+
+
+
+/////////FUNCION ORIGINAL//////////
+    // public function all()
+    // {   
+    //     return Comision::all();
+    // }
+    
+    /**
+     * Show the form for creating a new resource.
+     * @return Renderable
+     */
+    public function create()
+    {
+        $nombrespersonas = Personal::all();
+        $areas           = Area::all();
+        $secciones       = Seccion::all();
+        //dd($secciones);
+        return view('recursoshumanos::comision.create', compact('nombrespersonas','areas','secciones'));
+        
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     * @param Request $request
+     * @return Renderable
+     */
+    public function store(ComisionRequest $request)
+    {
+        Comision::store($request->validated());
+        return redirect()->route('recursoshumanos.comision.index')->with('success', 'Comision creada satisfactoriamente');
+    }
+
+    /**
+     * Show the specified resource.
+     * @param int $id
+     * @return Renderable
+     */
+    public function show($id)
+    {
+        $comision = Comision::show($id);
+        return view('recursoshumanos::show', compact('comision'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     * @param int $id
+     * @return Renderable
+     */
+    public function edit($id)
+    {
+        $nombrespersonas = Personal::all();
+        $areas           = Area::all();
+        $comision        = Comision::find($id);
+        $secciones       = Seccion::all();
+        return view('recursoshumanos::comision.edit', compact('comision','areas','nombrespersonas','secciones'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     * @param Request $request
+     * @param int $id
+     * @return Renderable
+     */
+    public function update(ComisionRequest $request, $id)
+    {
+        Comision::update($request->validated(), $id);
+        return redirect()->route('recursoshumanos.comision.index')->with('success', 'Comision actualizada satisfactoriamente');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     * @param int $id
+     * @return Renderable
+     */
+    public function destroy($id)
+    {
+        Comision::delete($id);
+        return redirect()->route('recursoshumanos.comision.index')->with('success', 'Comision eliminada satisfactoriamente');
+    }
+    public function pdf($id)
+    {
+        $seccionController  = new SeccionController();
+        $comisions           = Comision::show($id);
+        //PREGUNTAMOS SI TIENE VALORES EN $comision
+        if (count($comisions)>=1) {
+            //SI EXISTE VALORES HARA EL TRABAJO DE BUSCAR
+            $seccionBuscar      = $comisions[0]['SECCION'];
+            $seccion            = $seccionController->seccionById($seccionBuscar);
+            //OBTENEMOS EL CI DEL USUARIO
+            $user      = auth()->user();
+            $idusuario = $user->id;
+            //MOSTRARA EL PDF
+            return view('recursoshumanos::comision.pdf', compact('comisions','seccion','idusuario'));
+        }else{
+            //NO MOSTRARA Y NOS MANDARA DIRECTO A VER LOS REGISTROS
+            return view('recursoshumanos::comision.index')->with('success', 'Documento no valido o eliminado.');
+        }
+    }
+
+    public function pdf1($id)
+    {
+         $seccionController  = new SeccionController();
+         $comisions           = Comision::show($id);
+         //PREGUNTAMOS SI TIENE VALORES EN $comision
+         if (count($comisions)>=1) {
+             //SI EXISTE VALORES HARA EL TRABAJO DE BUSCAR
+             $seccionBuscar      = $comisions[0]['SECCION'];
+             $seccion            = $seccionController->seccionById($seccionBuscar);
+             //OBTENEMOS EL CI DEL USUARIO
+             $user      = auth()->user();
+             $idusuario = $user->id;
+             //MOSTRARA EL PDF
+             return view('recursoshumanos::comision.pdf1', compact('comisions','seccion','idusuario'));
+         }else{
+             //NO MOSTRARA Y NOS MANDARA DIRECTO A VER LOS REGISTROS
+             return view('recursoshumanos::comision.index')->with('success', 'Documento no valido o eliminado.');
+         }
+    }
+}
