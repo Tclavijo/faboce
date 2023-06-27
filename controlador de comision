@@ -125,9 +125,10 @@ public function obtenerCarnetTrabajadorActivo()
 
     public function index()
     {
-        $user = Auth::user();
-        $usuarioLoggeado = User::where('carnet',$user->carnet)->get();
-        dd($user);
+        $user = Auth::user();        
+       //dd($user);
+       return view('recursoshumanos::comision.index'); 
+
     }
 
 /////INICIO NORMAL
