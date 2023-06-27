@@ -35,15 +35,6 @@ return [
 
     'connections' => [
 
-        'users' => [
-            'driver' => 'mysql',
-            'host' => 'localhost',
-            'port' => '3306',
-            'database' => 'faboce2023',
-            'username' => 'root', // tu user mysql
-            'password' => '', //passs
-        ],
-
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DATABASE_URL'),
